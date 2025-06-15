@@ -85,5 +85,3 @@ http://localhost:8080/swagger/api
 ### Test Case Coverage
 
 ## ![Test Case coverage](./screenshots/Test%20cases%20coverage.png)
-
-## ![Short Video Demonstration](./screenshots/assignment-recording.webm)
