@@ -5,6 +5,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { DocumentModule } from './document/document.module';
+import { IngestionModule } from './ingestion/ingestion.module';
 
 /**
  * AppModule is the root module of the application.
@@ -46,6 +48,8 @@ import { UsersModule } from './users/users.module';
      */
     AuthModule,
     UsersModule,
+    DocumentModule,
+    IngestionModule,
   ],
   controllers: [AppController],
   providers: [AppService],
