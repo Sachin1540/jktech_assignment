@@ -24,10 +24,11 @@ export class DocumentService {
         filename: file.originalname,
         path: file.path,
         mimetype: file.mimetype,
-        uploadedBy: uploadedBy?.email,
+        uploadedBy: uploadedBy?.id,
       });
       return await this.documentRepo.save(doc);
     } catch (error) {
+      console.log('error: ', error);
       this.logger.error('Failed to upload document', error);
       throw new InternalServerErrorException('Failed to upload document');
     }

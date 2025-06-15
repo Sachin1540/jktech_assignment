@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe } from '@nestjs/common';
+import { join } from 'path';
 
 async function bootstrap() {
   // Create the NestJS application instance using Express
@@ -16,7 +17,11 @@ async function bootstrap() {
 
   // Apply a global validation pipe to automatically validate DTOs using class-validator
   app.useGlobalPipes(new ValidationPipe());
-
+  // Serve static files from 'uploads' directory
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads/', // files will be available at http://localhost:8080/uploads/...
+  });
+  
   /**
    * Swagger Configuration for API Documentation
    * - Title, description, version

@@ -93,7 +93,7 @@ describe('DocumentController', () => {
         mimetype: 'application/pdf',
       } as Express.Multer.File;
       const body: UpdateDocumentDto = {
-        title: 'Updated Title',
+        filename: 'Updated Title',
       };
       const req = { user: { id: 123 } } as any;
       const updatedDoc = { id: 1, ...body };
