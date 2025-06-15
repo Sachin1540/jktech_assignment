@@ -32,35 +32,50 @@ This is a modular NestJS-based backend application with integrated authenticatio
 
 ---
 
-## 🚀 Getting Started (with Docker)
+## Getting Started (with Docker)
 
 ### 1. Clone the Repository
 
-```bash
 git clone https://github.com/Sachin1540/jktech_assignment.git
 cd jktech_assignment
 
-### 2. Clone the Repository
+## 2. Running Without Docker (Optional)
+
 docker-compose up --build
 
-Running Without Docker (Optional)
-If you prefer to run locally:
-
+## If you prefer to run locally:
 
 # Install dependencies
+
 npm install
 
 # Start PostgreSQL manually or with Docker
+
 # Update .env with DB connection
 
 # Run the server
+
 npm run start:dev || nest start --watch
 
-API Documentation
-Once the server is running, go to:
+## Run the test cases
 
+npm run test:cov
+
+## API Documentation
+
+Once the server is running, go to:
 http://localhost:8080/swagger/api
 
+## Screenshots
 
+### Swagger AAPI Documentation
 
-```
+![Swagger AAPI Documentation](./screenshots/Swagger%20Api%20Documentation.png)
+
+### Docker desktop terminal
+
+![Docker desktop terminal](./screenshots/docker%20desktop%20terminal.png)
+
+### Test Case Coverage
+
+![Test Case coverage](./screenshots/Test%20cases%20coverage.png)
