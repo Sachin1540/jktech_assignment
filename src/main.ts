@@ -21,7 +21,7 @@ async function bootstrap() {
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads/', // files will be available at http://localhost:8080/uploads/...
   });
-  
+
   /**
    * Swagger Configuration for API Documentation
    * - Title, description, version
@@ -48,10 +48,5 @@ async function bootstrap() {
   const port = process.env.PORT ?? 8080;
   // Start the application
   await app.listen(port);
-
-  console.log(`Server is running at: http://localhost:${port}`);
-  console.log(
-    `Swagger API docs available at: http://localhost:${port}/swagger/api`,
-  );
 }
 bootstrap();
