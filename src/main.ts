@@ -1,8 +1,52 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  await app.listen(process.env.PORT ?? 3000);
+  // Create the NestJS application instance using Express
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Enable Cross-Origin Resource Sharing (CORS) to allow requests from other domains
+  app.enableCors();
+
+  // Optional: Prefix all routes with '/api' for better organization
+  app.setGlobalPrefix('api');
+
+  // Apply a global validation pipe to automatically validate DTOs using class-validator
+  app.useGlobalPipes(new ValidationPipe());
+
+  /**
+   * Swagger Configuration for API Documentation
+   * - Title, description, version
+   * - Bearer Auth (JWT) added to Swagger UI
+   */
+  const config = new DocumentBuilder()
+    .setTitle('JK Tech')
+    .setDescription('API documentation for authentication and user management')
+    .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http', // HTTP authentication scheme
+        scheme: 'bearer', // 'bearer' keyword used in header
+        bearerFormat: 'JWT', // Token format
+        name: 'Authorization', // Header name
+        description: 'Enter JWT token', // Swagger UI helper text
+        in: 'header', // Token location
+      },
+      'access-token', // Name used in @ApiBearerAuth('access-token')
+    )
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('swagger/api', app, document);
+  const port = process.env.PORT ?? 8080;
+  // Start the application
+  await app.listen(port);
+
+  console.log(`Server is running at: http://localhost:${port}`);
+  console.log(
+    `Swagger API docs available at: http://localhost:${port}/swagger/api`,
+  );
 }
 bootstrap();
