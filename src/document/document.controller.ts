@@ -140,8 +140,7 @@ export class DocumentController {
     schema: {
       type: 'object',
       properties: {
-        title: { type: 'string' },
-        description: { type: 'string' },
+        filename: { type: 'string' },
         file: {
           type: 'string',
           format: 'binary',
