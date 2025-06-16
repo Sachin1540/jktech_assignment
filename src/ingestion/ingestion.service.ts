@@ -147,8 +147,25 @@ export class IngestionService {
    *
    * @returns A list of all ingestion runs
    */
-  async getAllIngestionRuns(): Promise<IngestionRun[]> {
-    return this.ingestionRunRepository.find({ order: { createdAt: 'DESC' } });
+  // async getAllIngestionRuns(): Promise<IngestionRun[]> {
+  //   return this.ingestionRunRepository.find({ order: { createdAt: 'DESC' } });
+  // }
+  async getAllIngestionRuns(page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await this.ingestionRunRepository.findAndCount({
+      skip,
+      take: limit,
+      order: { createdAt: 'DESC' },
+    });
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   /**

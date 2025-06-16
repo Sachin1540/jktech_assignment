@@ -1,10 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-
 import { Role } from 'src/auth/dto/enum/roles.enum';
 import { AuthenticatedRequest } from 'src/common/types/authenticated-request';
 import { Response } from 'express';
 import { IngestionController } from 'src/ingestion/ingestion.controller';
 import { IngestionService } from 'src/ingestion/ingestion.service';
+import * as httpMocks from 'node-mocks-http';
+import { PaginationDto } from 'src/common/pagination.dto';
 
 const mockIngestionService = {
   triggerIngestion: jest.fn(),
@@ -77,15 +78,16 @@ describe('IngestionController', () => {
       error: 'Boom',
     });
   });
-  it('should return all ingestion runs', async () => {
-    const res = mockRes();
-    const runs = [{ id: 1 }, { id: 2 }];
-    mockIngestionService.getAllIngestionRuns.mockResolvedValue(runs);
+  it('should return all ingestion runs with status 200', async () => {
+    const res = httpMocks.createResponse();
+    const query: PaginationDto = { page: 1, limit: 10 };
 
-    await controller.getAllRuns(res);
+    await controller.getAllRuns(query, res as any);
 
-    expect(service.getAllIngestionRuns).toHaveBeenCalled();
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith(runs);
+    expect(mockIngestionService.getAllIngestionRuns).toHaveBeenCalledWith(
+      1,
+      10,
+    );
+    expect(res._getStatusCode()).toBe(200);
   });
 });

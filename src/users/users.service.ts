@@ -10,6 +10,7 @@ import * as bcrypt from 'bcrypt';
 import { Users } from './user.entity';
 import { CreateUserDto } from './dto/user.dto';
 import { Role } from 'src/auth/dto/enum/roles.enum';
+import { faker } from '@faker-js/faker/locale/en';
 
 /**
  * Service for managing user operations such as registering,
@@ -96,10 +97,26 @@ export class UsersService {
    * Retrieves all users, excluding password fields.
    * @returns An array of user objects with id, email, and role.
    */
-  async findAll() {
-    return this.userRepository.find({ select: ['id', 'email', 'role'] });
-  }
+  // async findAll() {
+  //   return this.userRepository.find({ select: ['id', 'email', 'role'] });
+  // }
+  async findAll(page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
 
+    const [data, total] = await this.userRepository.findAndCount({
+      skip,
+      take: limit,
+      order: { createdAt: 'DESC' },
+    });
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
   /**
    * Finds a user by ID.
    * @param id The ID of the user.
@@ -134,5 +151,28 @@ export class UsersService {
   async remove(id: number) {
     await this.findById(id);
     return this.userRepository.delete(id);
+  }
+  async importFakeDatainUserEntity() {
+    const BATCH_SIZE = 1000; // smaller batches help with memory and performance
+
+    for (let i = 0; i < 10000; i += BATCH_SIZE) {
+      const batch: any = [];
+
+      for (let j = 0; j < BATCH_SIZE; j++) {
+        const index = i + j;
+        batch.push({
+          // id: index + 1,
+          email: `user${index + 1}@example.com`, // ensures uniqueness
+          password: await bcrypt.hash('Test@123', 10),
+          role: Role.USER,
+          tokenVersion: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      }
+
+      await this.userRepository.save(batch);
+      console.log(`Inserted ${i + BATCH_SIZE} users`);
+    }
   }
 }

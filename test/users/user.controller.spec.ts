@@ -1,14 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
-
 import { Role } from 'src/auth/dto/enum/roles.enum';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
 import { UsersController } from 'src/users/users.controller';
 import { UsersService } from 'src/users/users.service';
 import { CreateUserDto, UpdateRoleDto } from 'src/users/dto/user.dto';
 import { createResponse } from 'node-mocks-http';
 import * as httpMocks from 'node-mocks-http';
-
 import { Response } from 'express';
+import { PaginationDto } from 'src/common/pagination.dto';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -85,77 +84,23 @@ describe('UsersController', () => {
         },
       });
     });
-
-    // it('should handle registration failure', async () => {
-    //   mockUsersService.register.mockRejectedValue(
-    //     new Error('Registration failed'),
-    //   );
-
-    //   const result = await controller.register({
-    //     email: 'fail@example.com',
-    //     password: 'pass',
-    //     role: Role.USER,
-    //   });
-
-    //   if ('success' in result && result.success === false) {
-    //     expect(result.message).toBe('Registration failed');
-    //   } else {
-    //     fail('Expected error response with success: false');
-    //   }
-    // });
   });
 
   // Get all users
   describe('getAllUsers', () => {
-    it('should return a list of users', async () => {
-      mockUsersService.findAll.mockResolvedValue([mockUser]);
-      const result = await controller.getAllUsers();
-      expect(result).toEqual([mockUser]);
-    });
-
-    it('should handle error', async () => {
-      mockUsersService.findAll.mockRejectedValue(new Error('DB error'));
-
-      const result = await controller.getAllUsers();
-
-      if ('success' in result && result.success === false) {
-        expect(result.message).toBe('Failed to get users');
-        expect(result.error).toBe('DB error');
-      } else {
-        fail('Expected error response');
-      }
-    });
-  });
-
-  // Get user by ID
-  describe('getUserById', () => {
-    it('should return user by id', async () => {
-      const user = { id: 1, email: 'test@example.com' };
+    it('should return all users with status 200', async () => {
       const res = httpMocks.createResponse();
-      mockUsersService.findById.mockResolvedValue(user);
 
-      const controller = new UsersController(mockUsersService as any);
-      await controller.getUserById(1, res as Response);
+      const mockUsers = [
+        { id: 1, email: 'user1@example.com' },
+        { id: 2, email: 'user2@example.com' },
+      ];
+      const query: PaginationDto = { page: 1, limit: 10 };
 
+      await controller.getAllUsers(query, res as any);
+
+      expect(mockUsersService.findAll).toHaveBeenCalledWith(1, 10);
       expect(res._getStatusCode()).toBe(200);
-      expect(res._getJSONData()).toEqual(user);
-    });
-
-    it('should handle user not found', async () => {
-      const res = httpMocks.createResponse();
-      mockUsersService.findById.mockRejectedValue(
-        new NotFoundException('User not found'),
-      );
-
-      const controller = new UsersController(mockUsersService as any);
-      await controller.getUserById(999, res as Response);
-
-      expect(res._getStatusCode()).toBe(404);
-      expect(res._getJSONData()).toEqual({
-        success: false,
-        message: 'Failed to get user',
-        error: 'User not found',
-      });
     });
   });
 

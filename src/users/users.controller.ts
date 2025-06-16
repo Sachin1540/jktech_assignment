@@ -14,6 +14,8 @@ import {
   ParseIntPipe,
   HttpStatus,
   BadRequestException,
+  Logger,
+  Query,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto, UpdateRoleDto } from './dto/user.dto';
@@ -31,12 +33,14 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 import { Role } from 'src/auth/dto/enum/roles.enum';
 import { Response } from 'express';
 import { Res } from '@nestjs/common';
+import { PaginationDto } from 'src/common/pagination.dto';
 
 @ApiTags('User')
 @ApiBearerAuth('access-token')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+  private readonly logger = new Logger(UsersService.name);
 
   /**
    * Registers a new user.
@@ -63,16 +67,12 @@ export class UsersController {
       };
       return await this.usersService.register(payload);
     } catch (error) {
+      this.logger.error('Failed to register user', error);
       throw new BadRequestException({
         success: false,
         message: 'Registration failed',
         error: error?.message || error,
       });
-      // return {
-      //   success: false,
-      //   message: 'Registration failed',
-      //   error: error?.message || error,
-      // };
     }
   }
 
@@ -87,11 +87,13 @@ export class UsersController {
   @ApiOperation({ summary: 'Get all users (Admin only)' })
   @ApiResponse({ status: HttpStatus.OK, description: 'List of all users' })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Access denied' })
-  async getAllUsers() {
+  async getAllUsers(@Query() query: PaginationDto, @Res() res: Response) {
     try {
-      const users = await this.usersService.findAll();
-      return users;
+      const { page, limit } = query;
+      const result = await this.usersService.findAll(page, limit);
+      res.status(HttpStatus.OK).json(result);
     } catch (error) {
+      this.logger.error('Failed to get all the users', error);
       return {
         success: false,
         message: 'Failed to get users',
@@ -121,6 +123,7 @@ export class UsersController {
       const user = await this.usersService.findById(id);
       return res.status(HttpStatus.OK).json(user);
     } catch (error) {
+      this.logger.error('Failed to get users', error);
       return res.status(HttpStatus.NOT_FOUND).json({
         success: false,
         message: 'Failed to get user',
@@ -156,6 +159,7 @@ export class UsersController {
       const result = await this.usersService.updateRole(+id, body.role);
       return res.status(200).json(result);
     } catch (error) {
+      this.logger.error('Failed to update users', error);
       return res.status(error.status || 500).json({
         message: error.message || 'Something went wrong',
       });
@@ -186,9 +190,28 @@ export class UsersController {
       const result = await this.usersService.remove(+id);
       return res.status(200).json(result);
     } catch (error) {
+      this.logger.error('Failed to delete users', error);
       return res.status(error.status || 500).json({
         message: error.message || 'Something went wrong',
       });
+    }
+  }
+
+  @Get('import-fake-data/test')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Import Fake data in Users table test' })
+  async importFakeDatainUserEntity() {
+    try {
+      const users = await this.usersService.importFakeDatainUserEntity();
+      return users;
+    } catch (error) {
+      this.logger.error('Failed to upload users', error);
+      return {
+        success: false,
+        message: 'Failed to get users',
+        error: error?.message || error,
+      };
     }
   }
 }
