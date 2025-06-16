@@ -1,5 +1,11 @@
-import { IsEmail, IsEnum, IsNotEmpty, MinLength } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import {
+  IsEmail,
+  IsEmpty,
+  IsEnum,
+  IsNotEmpty,
+  MinLength,
+} from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Role } from 'src/auth/dto/enum/roles.enum';
 
 /**

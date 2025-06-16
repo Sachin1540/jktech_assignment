@@ -1,105 +1,91 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { IngestionController } from '../../src/ingestion/ingestion.controller';
-import { IngestionService } from '../../src/ingestion/ingestion.service';
-import { createRequest, createResponse } from 'node-mocks-http';
+
 import { Role } from 'src/auth/dto/enum/roles.enum';
+import { AuthenticatedRequest } from 'src/common/types/authenticated-request';
+import { Response } from 'express';
+import { IngestionController } from 'src/ingestion/ingestion.controller';
+import { IngestionService } from 'src/ingestion/ingestion.service';
+
+const mockIngestionService = {
+  triggerIngestion: jest.fn(),
+  getAllIngestionRuns: jest.fn(),
+};
 
 describe('IngestionController', () => {
   let controller: IngestionController;
-  let mockIngestionService: any;
+  let service: IngestionService;
+
+  const mockRes = () => {
+    const res: Partial<Response> = {};
+    res.status = jest.fn().mockReturnThis();
+    res.json = jest.fn().mockReturnThis();
+    return res as Response;
+  };
 
   beforeEach(async () => {
-    mockIngestionService = {
-      triggerIngestion: jest.fn(),
-      getAllIngestionRuns: jest.fn(),
-    };
-
     const module: TestingModule = await Test.createTestingModule({
       controllers: [IngestionController],
       providers: [
-        {
-          provide: IngestionService,
-          useValue: mockIngestionService,
-        },
+        { provide: IngestionService, useValue: mockIngestionService },
       ],
     }).compile();
 
     controller = module.get<IngestionController>(IngestionController);
+    service = module.get<IngestionService>(IngestionService);
+  });
+
+  it('should trigger ingestion with valid token', async () => {
+    const user = { id: 1, email: 'user@example.com', role: Role.USER };
+    const req = { user } as AuthenticatedRequest;
+    const res = mockRes();
+    const mockResult = { success: true };
+
     process.env.WEBHOOK_SECRET = 'valid-token';
+    mockIngestionService.triggerIngestion.mockResolvedValue(mockResult);
+
+    await controller.webhookTrigger('valid-token', res, req);
+
+    expect(service.triggerIngestion).toHaveBeenCalledWith(user);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(mockResult);
   });
+  it('should return 401 for invalid webhook token', async () => {
+    const req = { user: { id: 1, role: Role.USER } } as AuthenticatedRequest;
+    const res = mockRes();
 
-  describe('webhookTrigger', () => {
-    it('should return 401 if webhook token is missing or invalid', async () => {
-      const req = createRequest({
-        user: { id: 1, email: 'test@example.com', role: Role.USER },
-      });
-      const res = createResponse();
+    process.env.WEBHOOK_SECRET = 'valid-token';
 
-      await controller.webhookTrigger('invalid-token', res as any, req as any);
+    await controller.webhookTrigger('invalid-token', res, req);
 
-      expect(res._getStatusCode()).toBe(401);
-      expect(JSON.parse(res._getData())).toMatchObject({
-        message: 'Unauthorized: Invalid or missing webhook token',
-      });
-    });
-
-    it('should return success if webhook token is valid', async () => {
-      const req = createRequest({
-        user: { id: 1, email: 'test@example.com', role: Role.USER },
-      });
-      const res = createResponse();
-
-      mockIngestionService.triggerIngestion.mockResolvedValue({
-        success: true,
-        runId: 1,
-        message: 'Completed',
-      });
-
-      await controller.webhookTrigger('valid-token', res as any, req as any);
-
-      expect(mockIngestionService.triggerIngestion).toHaveBeenCalled();
-      expect(res._getStatusCode()).toBe(200);
-      expect(JSON.parse(res._getData())).toMatchObject({
-        success: true,
-        runId: 1,
-      });
-    });
-
-    it('should return 500 if ingestion fails', async () => {
-      const req = createRequest({
-        user: { id: 1, email: 'test@example.com', role: Role.USER },
-      });
-      const res = createResponse();
-
-      mockIngestionService.triggerIngestion.mockRejectedValue(
-        new Error('DB error'),
-      );
-
-      await controller.webhookTrigger('valid-token', res as any, req as any);
-
-      expect(res._getStatusCode()).toBe(500);
-      expect(JSON.parse(res._getData())).toMatchObject({
-        message: 'Webhook ingestion failed',
-        error: 'DB error',
-      });
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'Unauthorized: Invalid or missing webhook token',
     });
   });
+  it('should return 500 if ingestion service throws', async () => {
+    const req = { user: { id: 1, role: Role.USER } } as AuthenticatedRequest;
+    const res = mockRes();
 
-  describe('getAllRuns', () => {
-    it('should return ingestion runs', async () => {
-      const res = createResponse();
+    process.env.WEBHOOK_SECRET = 'valid-token';
+    mockIngestionService.triggerIngestion.mockRejectedValue(new Error('Boom'));
 
-      const mockRuns = [
-        { id: 1, status: 'COMPLETED' },
-        { id: 2, status: 'FAILED' },
-      ];
+    await controller.webhookTrigger('valid-token', res, req);
 
-      mockIngestionService.getAllIngestionRuns.mockResolvedValue(mockRuns);
-
-      await controller.getAllRuns(res as any);
-
-      expect(res._getStatusCode()).toBe(200);
-      expect(JSON.parse(res._getData())).toEqual(mockRuns);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'Webhook ingestion failed',
+      error: 'Boom',
     });
+  });
+  it('should return all ingestion runs', async () => {
+    const res = mockRes();
+    const runs = [{ id: 1 }, { id: 2 }];
+    mockIngestionService.getAllIngestionRuns.mockResolvedValue(runs);
+
+    await controller.getAllRuns(res);
+
+    expect(service.getAllIngestionRuns).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(runs);
   });
 });

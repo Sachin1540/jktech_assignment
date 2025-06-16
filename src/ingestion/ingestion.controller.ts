@@ -21,6 +21,7 @@ import {
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { Role } from 'src/auth/dto/enum/roles.enum';
+import { AuthenticatedRequest } from 'src/common/types/authenticated-request';
 
 /**
  * Controller for handling ingestion-related endpoints.
@@ -56,7 +57,7 @@ export class IngestionController {
   async webhookTrigger(
     @Headers('x-webhook-token') token: string,
     @Res() res: Response,
-    @Req() req: Request,
+    @Req() req: AuthenticatedRequest,
   ) {
     const validToken = process.env.WEBHOOK_SECRET;
     if (!token || token !== validToken) {

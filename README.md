@@ -72,6 +72,20 @@ http://localhost:8080/swagger/api
 
 ---
 
+### Docker comand to view tables & data in PostgreSQL database 
+
+## Step 1: Find the container name
+docker ps
+
+## Step 1: Connect to the container
+DB_HOST=localhost 
+
+
+## Step 1: List the table name
+\dt    
+
+---
+
 ## Screenshots
 
 ### Swagger AAPI Documentation

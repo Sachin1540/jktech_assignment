@@ -5,19 +5,20 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { Role } from 'src/auth/dto/enum/roles.enum';
 import { UsersService } from 'src/users/users.service';
-import { User } from 'src/users/user.entity';
-import { CreateUserDto } from 'src/users/dto/user.dto';
+import { Users } from 'src/users/user.entity';
 
 describe('UsersService', () => {
   let service: UsersService;
-  let repo: jest.Mocked<Repository<User>>;
+  let repo: jest.Mocked<Repository<Users>>;
 
-  const mockUser: User = {
+  const mockUser: Users = {
     id: 1,
     email: 'test@example.com',
     password: 'hashedpassword',
     role: Role.USER,
     tokenVersion: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   };
 
   const mockUserRepository = {
@@ -34,14 +35,14 @@ describe('UsersService', () => {
       providers: [
         UsersService,
         {
-          provide: getRepositoryToken(User),
+          provide: getRepositoryToken(Users),
           useValue: mockUserRepository,
         },
       ],
     }).compile();
 
     service = module.get<UsersService>(UsersService);
-    repo = module.get(getRepositoryToken(User));
+    repo = module.get(getRepositoryToken(Users));
   });
 
   afterEach(() => {
@@ -51,10 +52,12 @@ describe('UsersService', () => {
   describe('register', () => {
     it('should throw conflict if email already exists', async () => {
       repo.findOne.mockResolvedValue(mockUser);
-      const dto: CreateUserDto = {
+      const dto = {
         email: 'test@example.com',
         password: 'password',
         role: Role.USER,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
       await expect(service.register(dto)).rejects.toThrow(ConflictException);
     });
@@ -67,8 +70,8 @@ describe('UsersService', () => {
       repo.create.mockReturnValue({ ...mockUser, password: hashed });
       repo.save.mockResolvedValue({ ...mockUser, password: hashed });
 
-      const dto: CreateUserDto = {
-        email: 'test@example.com',
+      const dto = {
+        email: 'test1@example.com',
         password: 'password',
         role: Role.USER,
       };
@@ -78,7 +81,9 @@ describe('UsersService', () => {
         id: mockUser.id,
         email: mockUser.email,
         role: mockUser.role,
-        tokenVersion: 0,
+        tokenVersion: mockUser.tokenVersion,
+        createdAt: expect.any(Date),
+        updatedAt: expect.any(Date),
       });
     });
   });
@@ -107,13 +112,6 @@ describe('UsersService', () => {
   });
 
   describe('remove', () => {
-    // it('should delete the user if exists', async () => {
-    //   repo.findOne.mockResolvedValue(mockUser);
-    //   repo.delete.mockResolvedValue({ affected: 1, raw: {} });
-
-    //   const result = await service.remove(1);
-    //   expect(result).toEqual({ affected: 1 });
-    // });
     it('should delete the user if exists', async () => {
       repo.findOne.mockResolvedValue(mockUser);
       repo.delete.mockResolvedValue({ affected: 1, raw: {} }); // mock full DeleteResult
@@ -147,10 +145,10 @@ describe('UsersService', () => {
 
   describe('findAll', () => {
     it('should return all users without passwords', async () => {
-      const users: Partial<User>[] = [
+      const users: Partial<Users>[] = [
         { id: 1, email: 'a@a.com', role: Role.USER },
       ];
-      repo.find.mockResolvedValue(users as User[]);
+      repo.find.mockResolvedValue(users as Users[]);
       const result = await service.findAll();
       expect(result).toEqual(users);
     });

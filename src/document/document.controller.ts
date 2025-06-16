@@ -1,3 +1,7 @@
+/**
+ * Controller for handling document-related operations such as
+ * uploading, retrieving, updating, and deleting documents.
+ */
 import {
   Controller,
   Post,
@@ -31,6 +35,7 @@ import { Response, Request } from 'express';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { UpdateDocumentDto } from './dto/document.dto';
 import { Role } from 'src/auth/dto/enum/roles.enum';
+import { AuthenticatedRequest } from 'src/common/types/authenticated-request';
 
 @ApiTags('Document')
 @Controller('documents')
@@ -38,7 +43,13 @@ import { Role } from 'src/auth/dto/enum/roles.enum';
 export class DocumentController {
   constructor(private documentService: DocumentService) {}
 
-  // Upload Document
+  /**
+   * Uploads a document file.
+   * Requires authentication and appropriate user role.
+   * @param file The uploaded file.
+   * @param req Authenticated request containing the user.
+   * @param res HTTP response object.
+   */
   @Post('upload')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.USER, Role.ADMIN)
@@ -66,7 +77,7 @@ export class DocumentController {
   @ApiOperation({ summary: 'Upload a document' })
   async upload(
     @UploadedFile() file: Express.Multer.File,
-    @Req() req: Request,
+    @Req() req: AuthenticatedRequest,
     @Res() res: Response,
   ) {
     try {
@@ -80,7 +91,11 @@ export class DocumentController {
     }
   }
 
-  // Get All Documents
+  /**
+   * Retrieves all documents.
+   * Requires authentication and appropriate role.
+   * @param res HTTP response object.
+   */
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.USER, Role.ADMIN)
@@ -97,7 +112,11 @@ export class DocumentController {
     }
   }
 
-  // Get Document by ID
+  /**
+   * Retrieves a specific document by ID.
+   * @param id Document ID.
+   * @param res HTTP response object.
+   */
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.USER, Role.ADMIN)
@@ -115,13 +134,19 @@ export class DocumentController {
     }
   }
 
-  // Update Document Info
+  /**
+   * Updates document details and optionally replaces the file.
+   * @param id Document ID.
+   * @param file New uploaded file (optional).
+   * @param body DTO containing updated document info.
+   * @param req Authenticated request containing the user.
+   */
   @Put(':id')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: './uploads/documents', // or a dynamic path
+        destination: './uploads/documents',
         filename: (req, file, cb) => {
           const uniqueSuffix =
             Date.now() + '-' + Math.round(Math.random() * 1e9);
@@ -152,12 +177,16 @@ export class DocumentController {
     @Param('id') id: number,
     @UploadedFile() file: Express.Multer.File,
     @Body() body: UpdateDocumentDto,
-    @Req() req: Request,
+    @Req() req: AuthenticatedRequest,
   ) {
     return this.documentService.updateDocument(id, body, file, req.user);
   }
 
-  // Delete Document
+  /**
+   * Deletes a document by its ID.
+   * @param id Document ID.
+   * @param res HTTP response object.
+   */
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.USER, Role.ADMIN)

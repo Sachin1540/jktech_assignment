@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { IngestionRun } from './ingestionrun.entity';
 import { Ingestion_Status } from './enum/ingestion.enum';
-import { User } from 'src/users/user.entity';
+import { Users } from 'src/users/user.entity';
 
 /**
  * Entity representing an ingestion job.
@@ -71,16 +71,16 @@ export class Ingestion {
   /**
    * User who created the ingestion job.
    */
-  @ManyToOne(() => User, { nullable: false })
+  @ManyToOne(() => Users, { nullable: false })
   @JoinColumn({ name: 'createdBy' })
-  createdBy: User;
+  createdBy: Users;
 
   /**
-   * User who last updated the ingestion job.
+   * Users who last updated the ingestion job.
    */
-  @ManyToOne(() => User, { nullable: true })
+  @ManyToOne(() => Users, { nullable: true })
   @JoinColumn({ name: 'updatedBy' })
-  updatedBy: User;
+  updatedBy: Users;
 
   /**
    * Timestamp when the ingestion job was created.

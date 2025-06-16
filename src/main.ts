@@ -29,7 +29,7 @@ async function bootstrap() {
    */
   const config = new DocumentBuilder()
     .setTitle('JK Tech')
-    .setDescription('API documentation for authentication and user management')
+    .setDescription('API documentation for Nest Js ProjectS')
     .setVersion('1.0')
     .addBearerAuth(
       {

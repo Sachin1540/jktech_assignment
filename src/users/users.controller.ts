@@ -1,3 +1,7 @@
+/**
+ * Controller responsible for managing user-related operations such as
+ * registration, retrieval, updating roles, and deletion.
+ */
 import {
   Controller,
   Post,
@@ -9,6 +13,7 @@ import {
   UseGuards,
   ParseIntPipe,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto, UpdateRoleDto } from './dto/user.dto';
@@ -28,13 +33,15 @@ import { Response } from 'express';
 import { Res } from '@nestjs/common';
 
 @ApiTags('User')
-@ApiBearerAuth('access-token') // Adds Bearer token field in Swagger UI
+@ApiBearerAuth('access-token')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   /**
-   * Register a new user.
+   * Registers a new user.
+   * @param dto CreateUserDto containing email, password, and optional role.
+   * @returns Result of registration operation.
    */
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
@@ -56,16 +63,23 @@ export class UsersController {
       };
       return await this.usersService.register(payload);
     } catch (error) {
-      return {
+      throw new BadRequestException({
         success: false,
         message: 'Registration failed',
         error: error?.message || error,
-      };
+      });
+      // return {
+      //   success: false,
+      //   message: 'Registration failed',
+      //   error: error?.message || error,
+      // };
     }
   }
 
   /**
-   * Get all users - ADMIN only.
+   * Retrieves all registered users.
+   * Restricted to ADMIN role.
+   * @returns List of all users.
    */
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -87,7 +101,10 @@ export class UsersController {
   }
 
   /**
-   * Get user by ID - ADMIN only.
+   * Retrieves a specific user by their ID.
+   * Restricted to ADMIN role.
+   * @param id ID of the user to retrieve.
+   * @param res Express response object.
    */
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -113,7 +130,11 @@ export class UsersController {
   }
 
   /**
-   * Update user's role - ADMIN only.
+   * Updates a user's role.
+   * Restricted to ADMIN role.
+   * @param res Express response object.
+   * @param id ID of the user to update.
+   * @param body UpdateRoleDto containing the new role.
    */
   @Put(':id/role')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -142,7 +163,10 @@ export class UsersController {
   }
 
   /**
-   * Delete a user by ID - ADMIN only.
+   * Deletes a user by ID.
+   * Restricted to ADMIN role.
+   * @param id ID of the user to delete.
+   * @param res Express response object.
    */
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -161,7 +185,6 @@ export class UsersController {
     try {
       const result = await this.usersService.remove(+id);
       return res.status(200).json(result);
-      // return { success: true, message: 'User deleted successfully' };
     } catch (error) {
       return res.status(error.status || 500).json({
         message: error.message || 'Something went wrong',

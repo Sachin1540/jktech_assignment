@@ -11,6 +11,13 @@ import { UsersService } from 'src/users/users.service';
  *
  * This strategy is automatically triggered by NestJS when JwtAuthGuard is used.
  */
+export interface JwtPayload {
+  sub: number;
+  email: string;
+  role: string;
+  version: number;
+}
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
@@ -39,7 +46,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
    * @returns The user object to be attached to the request
    * @throws UnauthorizedException if the user is not found or token is invalid
    */
-  async validate(payload: any) {
+  async validate(payload: JwtPayload) {
     // Find user by email from payload
     const user = await this.usersService.findByEmail(payload.email);
 

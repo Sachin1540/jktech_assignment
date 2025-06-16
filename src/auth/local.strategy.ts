@@ -9,6 +9,12 @@ import { AuthService } from './auth.service';
  * It overrides the default username field to use 'email' instead of 'username'.
  * This strategy is invoked automatically by LocalAuthGuard when a login attempt is made.
  */
+export interface AuthenticatedUser {
+  id: number;
+  email: string;
+  role: string;
+}
+
 @Injectable()
 export class LocalAuthGuard extends PassportStrategy(Strategy) {
   constructor(private authService: AuthService) {
@@ -24,7 +30,7 @@ export class LocalAuthGuard extends PassportStrategy(Strategy) {
    * @returns The user object if validation is successful
    * @throws UnauthorizedException if credentials are invalid
    */
-  async validate(email: string, password: string): Promise<any> {
+  async validate(email: string, password: string): Promise<AuthenticatedUser> {
     const user = await this.authService.validateUser(email, password);
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
