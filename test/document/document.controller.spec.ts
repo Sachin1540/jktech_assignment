@@ -5,6 +5,8 @@ import { UpdateDocumentDto } from '../../src/document/dto/document.dto';
 import { createRequest, createResponse, MockRequest } from 'node-mocks-http';
 import { Role } from 'src/auth/dto/enum/roles.enum';
 import { AuthenticatedRequest } from 'src/common/types/authenticated-request';
+import { PaginationDto } from 'src/common/pagination.dto';
+import { Users } from 'src/users/user.entity';
 
 const mockDocumentService = {
   uploadDocument: jest.fn(),
@@ -70,12 +72,34 @@ describe('DocumentController', () => {
   });
 
   describe('getAll', () => {
-    it('should return all documents', async () => {
+    it('should return all documents with pagination', async () => {
       const docs = [{ id: 1 }, { id: 2 }];
+      const query = { page: 1, limit: 10 };
+      // const res = mockResponse();
+
       mockDocumentService.findAll.mockResolvedValue(docs);
-      await controller.getAll(res);
+
+      await controller.getAll(query, res);
+
+      expect(mockDocumentService.findAll).toHaveBeenCalledWith(1, 10);
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(docs);
+    });
+
+    it('should return 500 on error', async () => {
+      // const res = mockResponse();
+      const query = { page: 1, limit: 10 };
+      const error = new Error('DB error');
+
+      mockDocumentService.findAll.mockRejectedValue(error);
+
+      await controller.getAll(query, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Failed to fetch documents',
+        error: 'DB error',
+      });
     });
   });
 

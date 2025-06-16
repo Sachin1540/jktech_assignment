@@ -16,6 +16,8 @@ import {
   Res,
   HttpStatus,
   UseGuards,
+  Logger,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -24,6 +26,7 @@ import {
   ApiConsumes,
   ApiBody,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { DocumentService } from './document.service';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
@@ -36,12 +39,14 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { UpdateDocumentDto } from './dto/document.dto';
 import { Role } from 'src/auth/dto/enum/roles.enum';
 import { AuthenticatedRequest } from 'src/common/types/authenticated-request';
+import { PaginationDto } from 'src/common/pagination.dto';
 
 @ApiTags('Document')
 @Controller('documents')
 @ApiBearerAuth('access-token')
 export class DocumentController {
   constructor(private documentService: DocumentService) {}
+  private readonly logger = new Logger(DocumentService.name);
 
   /**
    * Uploads a document file.
@@ -96,13 +101,29 @@ export class DocumentController {
    * Requires authentication and appropriate role.
    * @param res HTTP response object.
    */
+  // @Get()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles(Role.USER, Role.ADMIN)
+  // @ApiOperation({ summary: 'Get all documents' })
+  // async getAll(@Res() res: Response) {
+  //   try {
+  //     const result = await this.documentService.findAll();
+  //     res.status(HttpStatus.OK).json(result);
+  //   } catch (error) {
+  //     res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+  //       message: 'Failed to fetch documents',
+  //       error: error.message || error,
+  //     });
+  //   }
+  // }
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.USER, Role.ADMIN)
-  @ApiOperation({ summary: 'Get all documents' })
-  async getAll(@Res() res: Response) {
+  @ApiOperation({ summary: 'Get all documents with pagination' })
+  async getAll(@Query() query: PaginationDto, @Res() res: Response) {
     try {
-      const result = await this.documentService.findAll();
+      const { page, limit } = query;
+      const result = await this.documentService.findAll(page, limit);
       res.status(HttpStatus.OK).json(result);
     } catch (error) {
       res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
@@ -201,6 +222,26 @@ export class DocumentController {
         message: 'Failed to delete document',
         error: error.message || error,
       });
+    }
+  }
+  @Get('import-fake-data/test')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Import Fake data in Users table test' })
+  async importFakeDatainUserEntity(@Req() req: AuthenticatedRequest) {
+    try {
+      this.logger.error('F');
+      const users = await this.documentService.importFakeDatainDocumentEntity(
+        req.user,
+      );
+      return users;
+    } catch (error) {
+      this.logger.error('Failed to upload document', error);
+      return {
+        success: false,
+        message: 'Failed to get users',
+        error: error?.message || error,
+      };
     }
   }
 }

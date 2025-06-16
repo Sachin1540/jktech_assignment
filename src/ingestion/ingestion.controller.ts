@@ -8,6 +8,8 @@ import {
   Headers,
   Get,
   Param,
+  Query,
+  Logger,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -22,6 +24,7 @@ import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { Role } from 'src/auth/dto/enum/roles.enum';
 import { AuthenticatedRequest } from 'src/common/types/authenticated-request';
+import { PaginationDto } from 'src/common/pagination.dto';
 
 /**
  * Controller for handling ingestion-related endpoints.
@@ -33,6 +36,7 @@ import { AuthenticatedRequest } from 'src/common/types/authenticated-request';
 @Controller('ingestion')
 export class IngestionController {
   constructor(private ingestionService: IngestionService) {}
+  private readonly logger = new Logger(IngestionService.name);
 
   /**
    * Trigger an ingestion process via a secured webhook endpoint.
@@ -51,7 +55,7 @@ export class IngestionController {
   @ApiOperation({ summary: 'Trigger ingestion via external webhook' })
   @ApiHeader({
     name: 'x-webhook-token',
-    description: 'Secure token for webhook authentication',
+    description: 'Secure token for webhook authentication(12345)',
     required: true,
   })
   async webhookTrigger(
@@ -88,8 +92,23 @@ export class IngestionController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get all ingestion runs (admin only)' })
-  async getAllRuns(@Res() res: Response) {
-    const result = await this.ingestionService.getAllIngestionRuns();
-    return res.status(HttpStatus.OK).json(result);
+  async getAllRuns(@Query() query: PaginationDto, @Res() res: Response) {
+    // const result = await this.ingestionService.getAllIngestionRuns();
+    // return res.status(HttpStatus.OK).json(result);
+    try {
+      const { page, limit } = query;
+      const result = await this.ingestionService.getAllIngestionRuns(
+        page,
+        limit,
+      );
+      res.status(HttpStatus.OK).json(result);
+    } catch (error) {
+      this.logger.error('Failed to get all the users', error);
+      return {
+        success: false,
+        message: 'Failed to get users',
+        error: error?.message || error,
+      };
+    }
   }
 }

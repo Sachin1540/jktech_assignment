@@ -9,6 +9,7 @@ import { Repository } from 'typeorm';
 import { Document } from './entity/document.entity';
 import { UpdateDocumentDto } from './dto/document.dto';
 import { Users } from 'src/users/user.entity';
+import { faker } from '@faker-js/faker/locale/en';
 /**
  * Service for managing document operations such as uploading,
  * retrieving, updating, and deleting documents.
@@ -47,9 +48,25 @@ export class DocumentService {
    * Retrieves all documents from the database.
    * @returns An array of document entities.
    */
-  async findAll() {
-    return this.documentRepo.find();
+
+  async findAll(page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await this.documentRepo.findAndCount({
+      skip,
+      take: limit,
+      order: { createdAt: 'DESC' },
+    });
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
+
   /**
    * Retrieves a document by its ID.
    * @param id The ID of the document.
@@ -111,5 +128,32 @@ export class DocumentService {
     await this.findOne(id); // Ensures the document exists or throws NotFoundException
     await this.documentRepo.delete(id);
     return { success: true, message: 'Document deleted' };
+  }
+  async importFakeDatainDocumentEntity(uploadedBy: Users) {
+    const BATCH_SIZE = 1000;
+
+    for (let i = 0; i < 100000; i += BATCH_SIZE) {
+      const batch: any = [];
+
+      for (let j = 0; j < BATCH_SIZE; j++) {
+        const index = i + j;
+        const randomFileName = faker.system.fileName();
+        const randomMimetype = faker.system.mimeType();
+        const randomPath = `/uploads/${faker.system.fileName()}`;
+
+        batch.push({
+          id: index + 1,
+          filename: randomFileName,
+          path: randomPath,
+          mimetype: randomMimetype,
+          uploadedBy: { id: uploadedBy.id }, // Fix here
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      }
+
+      await this.documentRepo.save(batch);
+      console.log(`Inserted ${i + BATCH_SIZE} documents`);
+    }
   }
 }

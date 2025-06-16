@@ -78,7 +78,7 @@ http://localhost:8080/swagger/api
 docker ps
 
 ## Step 1: Connect to the container
-DB_HOST=localhost 
+docker exec -it jktech_assignment-postgres-1 psql -U postgres -d jktech
 
 
 ## Step 1: List the table name
