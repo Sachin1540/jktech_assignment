@@ -4,11 +4,12 @@ import { UsersService } from '../../src/users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { Role } from 'src/auth/dto/enum/roles.enum';
+import { NotFoundException } from '@nestjs/common';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let mockUsersService: any;
-  let mockJwtService: any;
+  let mockUsersService: jest.Mocked<UsersService>;
+  let mockJwtService: jest.Mocked<JwtService>;
 
   const mockUser = {
     id: 1,
@@ -22,13 +23,13 @@ describe('AuthService', () => {
     mockUsersService = {
       findByEmail: jest.fn(),
       incrementTokenVersion: jest.fn(),
-    };
+    } as unknown as jest.Mocked<UsersService>;
 
     mockJwtService = {
       sign: jest.fn(),
       signAsync: jest.fn(),
       verify: jest.fn(),
-    };
+    } as unknown as jest.Mocked<JwtService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -98,9 +99,10 @@ describe('AuthService', () => {
         message: 'You are not authorized to perform proxy login.',
       });
     });
-
     it('should throw if proxy user not found', async () => {
-      mockUsersService.findByEmail.mockResolvedValue(null);
+      mockUsersService.findByEmail.mockRejectedValue(
+        new NotFoundException('User not found with this email'),
+      );
 
       await expect(
         service.proxyLogin('target@example.com', {
@@ -112,9 +114,26 @@ describe('AuthService', () => {
         }),
       ).rejects.toMatchObject({
         status: 404,
-        message: 'Target user not found.',
+        message: 'User not found with this email',
       });
     });
+
+    // it('should throw if proxy user not found', async () => {
+    //   mockUsersService.findByEmail.mockResolvedValue(null);
+
+    //   await expect(
+    //     service.proxyLogin('target@example.com', {
+    //       role: Role.ADMIN,
+    //       id: 0,
+    //       email: '',
+    //       password: '',
+    //       tokenVersion: 0,
+    //     }),
+    //   ).rejects.toMatchObject({
+    //     status: 404,
+    //     message: 'Target user not found.',
+    //   });
+    // });
 
     it('should return proxy token and user info', async () => {
       mockUsersService.findByEmail.mockResolvedValue(mockUser);
@@ -185,7 +204,7 @@ describe('AuthService', () => {
 
   describe('logout', () => {
     it('should increment token version and return success message', async () => {
-      const result = await service.logout(mockUser as any);
+      const result = await service.logout(mockUser);
       expect(mockUsersService.incrementTokenVersion).toHaveBeenCalledWith(1);
       expect(result).toEqual({ message: 'Logged out from all devices.' });
     });

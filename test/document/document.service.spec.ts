@@ -7,8 +7,18 @@ import {
   NotFoundException,
   InternalServerErrorException,
 } from '@nestjs/common';
+import { User } from 'src/users/user.entity';
 
 const mockDocumentRepo = () => ({
+  create: jest.fn(),
+  save: jest.fn(),
+  find: jest.fn(),
+  findOneBy: jest.fn(),
+  findOne: jest.fn(),
+  update: jest.fn(),
+  delete: jest.fn(),
+});
+const mockRepo = () => ({
   create: jest.fn(),
   save: jest.fn(),
   find: jest.fn(),
@@ -20,7 +30,7 @@ const mockDocumentRepo = () => ({
 
 describe('DocumentService', () => {
   let service: DocumentService;
-  let repo: jest.Mocked<Repository<Document>>;
+  let repo: ReturnType<typeof mockRepo>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -28,29 +38,32 @@ describe('DocumentService', () => {
         DocumentService,
         {
           provide: getRepositoryToken(Document),
-          useFactory: mockDocumentRepo,
+          useFactory: mockRepo,
         },
       ],
     }).compile();
 
-    service = module.get<DocumentService>(DocumentService);
+    service = module.get(DocumentService);
     repo = module.get(getRepositoryToken(Document));
   });
 
-  describe('uploadDocument', () => {
-    it('should upload and save a document', async () => {
-      const file: any = {
-        originalname: 'test.pdf',
-        path: 'uploads/test.pdf',
-        mimetype: 'application/pdf',
-      };
-      const user = { email: 'test@example.com' };
-      const savedDoc = { id: 1, ...file, uploadedBy: user.email };
+  const mockFile = {
+    originalname: 'test.pdf',
+    path: 'uploads/test.pdf',
+    mimetype: 'application/pdf',
+    filename: 'test.pdf',
+  } as Express.Multer.File;
 
+  const mockUser = { id: 1 } as User;
+
+  describe('uploadDocument', () => {
+    it('should create and save document successfully', async () => {
+      const savedDoc = { id: 1, ...mockFile, uploadedBy: mockUser };
       repo.create.mockReturnValue(savedDoc);
       repo.save.mockResolvedValue(savedDoc);
 
-      const result = await service.uploadDocument(file, user);
+      const result = await service.uploadDocument(mockFile, mockUser);
+
       expect(repo.create).toHaveBeenCalled();
       expect(repo.save).toHaveBeenCalledWith(savedDoc);
       expect(result).toEqual(savedDoc);
@@ -58,9 +71,10 @@ describe('DocumentService', () => {
 
     it('should throw InternalServerErrorException on error', async () => {
       repo.create.mockImplementation(() => {
-        throw new Error();
+        throw new Error('DB error');
       });
-      await expect(service.uploadDocument({} as any, {})).rejects.toThrow(
+
+      await expect(service.uploadDocument(mockFile, mockUser)).rejects.toThrow(
         InternalServerErrorException,
       );
     });
@@ -68,72 +82,85 @@ describe('DocumentService', () => {
 
   describe('findAll', () => {
     it('should return all documents', async () => {
-      const docs: any = [{ id: 1 }, { id: 2 }];
+      const docs = [{ id: 1 }, { id: 2 }];
       repo.find.mockResolvedValue(docs);
-      const result = await service.findAll();
-      expect(result).toEqual(docs);
+
+      expect(await service.findAll()).toEqual(docs);
     });
   });
 
   describe('findOne', () => {
-    it('should return a document by id', async () => {
-      const doc: any = { id: 1 };
+    it('should return the document if found', async () => {
+      const doc = { id: 1 };
       repo.findOneBy.mockResolvedValue(doc);
-      const result = await service.findOne(1);
-      expect(result).toEqual(doc);
+
+      expect(await service.findOne(1)).toEqual(doc);
     });
 
-    it('should throw NotFoundException if doc not found', async () => {
+    it('should throw NotFoundException if document not found', async () => {
       repo.findOneBy.mockResolvedValue(null);
+
       await expect(service.findOne(1)).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('update', () => {
-    it('should update and return the document', async () => {
-      const updatedDoc: any = { id: 1 };
-      //   repo.update.mockResolvedValue(undefined);
-      repo.findOneBy.mockResolvedValue(updatedDoc);
-      const result = await service.update(1, { filename: 'updated.pdf' });
-      expect(result).toEqual(updatedDoc);
+    it('should update and return updated document', async () => {
+      const updated = { id: 1 };
+      repo.update.mockResolvedValue({});
+      repo.findOneBy.mockResolvedValue(updated);
+
+      const result = await service.update(1, { filename: 'Updated' });
+
+      expect(repo.update).toHaveBeenCalledWith(1, { filename: 'Updated' });
+
+      expect(result).toEqual(updated);
     });
   });
 
   describe('updateDocument', () => {
-    it('should update the document with new file and fields', async () => {
-      const existingDoc = { id: 1, filename: 'old.pdf' } as Document;
-      const file = {
-        filename: 'new.pdf',
-        path: 'uploads/new.pdf',
-        mimetype: 'application/pdf',
-      } as any;
-      const dto: any = { someField: 'value' };
-      const user = { id: 123 };
+    it('should update metadata and file info', async () => {
+      const existingDoc = { id: 1 };
+      const updatedDoc = {
+        ...existingDoc,
+
+        filename: mockFile.filename,
+        path: mockFile.path,
+        mimetype: mockFile.mimetype,
+        updatedBy: mockUser,
+      };
 
       repo.findOne.mockResolvedValue(existingDoc);
-      repo.save.mockResolvedValue({
-        ...existingDoc,
-        ...dto,
-        ...file,
-        updatedBy: user.id,
-      });
+      repo.save.mockResolvedValue(updatedDoc);
 
-      const result = await service.updateDocument(1, dto, file, user);
-      expect(result.updatedBy).toEqual(user.id);
+      const result = await service.updateDocument(
+        1,
+        { filename: 'New' },
+        mockFile,
+        mockUser,
+      );
+
+      expect(repo.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(repo.save).toHaveBeenCalledWith(updatedDoc);
+      expect(result).toEqual(updatedDoc);
     });
 
-    it('should throw NotFoundException if doc not found', async () => {
+    it('should throw NotFoundException if document not found', async () => {
       repo.findOne.mockResolvedValue(null);
+
       await expect(
-        service.updateDocument(1, {}, undefined, {}),
+        service.updateDocument(1, {}, mockFile, mockUser),
       ).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('delete', () => {
-    it('should delete a document and return success message', async () => {
-      repo.delete.mockResolvedValue({ affected: 1 } as any);
+    it('should delete document and return success message', async () => {
+      repo.delete.mockResolvedValue({});
+
       const result = await service.delete(1);
+
+      expect(repo.delete).toHaveBeenCalledWith(1);
       expect(result).toEqual({ success: true, message: 'Document deleted' });
     });
   });

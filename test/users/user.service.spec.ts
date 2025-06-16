@@ -107,13 +107,6 @@ describe('UsersService', () => {
   });
 
   describe('remove', () => {
-    // it('should delete the user if exists', async () => {
-    //   repo.findOne.mockResolvedValue(mockUser);
-    //   repo.delete.mockResolvedValue({ affected: 1, raw: {} });
-
-    //   const result = await service.remove(1);
-    //   expect(result).toEqual({ affected: 1 });
-    // });
     it('should delete the user if exists', async () => {
       repo.findOne.mockResolvedValue(mockUser);
       repo.delete.mockResolvedValue({ affected: 1, raw: {} }); // mock full DeleteResult

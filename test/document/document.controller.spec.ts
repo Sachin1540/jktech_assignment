@@ -2,6 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DocumentController } from '../../src/document/document.controller';
 import { DocumentService } from '../../src/document/document.service';
 import { UpdateDocumentDto } from '../../src/document/dto/document.dto';
+import { createRequest, createResponse, MockRequest } from 'node-mocks-http';
+import { Role } from 'src/auth/dto/enum/roles.enum';
+import { AuthenticatedRequest } from 'src/common/types/authenticated-request';
 
 const mockDocumentService = {
   uploadDocument: jest.fn(),
@@ -34,6 +37,10 @@ describe('DocumentController', () => {
     expect(controller).toBeDefined();
   });
 
+  const res = createResponse();
+  res.status = jest.fn().mockReturnThis();
+  res.json = jest.fn();
+
   describe('upload', () => {
     it('should upload document and return result', async () => {
       const file = {
@@ -41,11 +48,16 @@ describe('DocumentController', () => {
         path: 'uploads/test.pdf',
         mimetype: 'application/pdf',
       } as Express.Multer.File;
-      const req = { user: { email: 'user@example.com' } } as any;
-      const res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      } as any;
+      const mockUser = {
+        id: 1,
+        email: 'user@example.com',
+        role: Role.ADMIN,
+        password: 'dummyPassword',
+        tokenVersion: 0,
+      };
+      const req = createRequest({
+        user: mockUser,
+      }) as MockRequest<AuthenticatedRequest>;
 
       const doc = { id: 1, filename: 'test.pdf' };
       mockDocumentService.uploadDocument.mockResolvedValue(doc);
@@ -59,10 +71,6 @@ describe('DocumentController', () => {
 
   describe('getAll', () => {
     it('should return all documents', async () => {
-      const res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      } as any;
       const docs = [{ id: 1 }, { id: 2 }];
       mockDocumentService.findAll.mockResolvedValue(docs);
       await controller.getAll(res);
@@ -73,10 +81,6 @@ describe('DocumentController', () => {
 
   describe('getOne', () => {
     it('should return a document by ID', async () => {
-      const res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      } as any;
       const doc = { id: 1 };
       mockDocumentService.findOne.mockResolvedValue(doc);
       await controller.getOne(1, res);
@@ -95,7 +99,17 @@ describe('DocumentController', () => {
       const body: UpdateDocumentDto = {
         filename: 'Updated Title',
       };
-      const req = { user: { id: 123 } } as any;
+      const mockUser = {
+        id: 1,
+        email: 'test@example.com',
+        role: Role.ADMIN,
+        password: 'dummyPassword',
+        tokenVersion: 0,
+      };
+      const req = createRequest({
+        user: mockUser,
+      }) as MockRequest<AuthenticatedRequest>;
+      // const req = { user: { id: 123 } };
       const updatedDoc = { id: 1, ...body };
 
       mockDocumentService.updateDocument.mockResolvedValue(updatedDoc);
@@ -113,10 +127,6 @@ describe('DocumentController', () => {
 
   describe('delete', () => {
     it('should delete a document and return success message', async () => {
-      const res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
-      } as any;
       const result = { success: true, message: 'Document deleted' };
       mockDocumentService.delete.mockResolvedValue(result);
       await controller.delete(1, res);

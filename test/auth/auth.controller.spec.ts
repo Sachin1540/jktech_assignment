@@ -36,6 +36,8 @@ describe('AuthController', () => {
    * Guards: LocalAuthGuard must succeed (mocked).
    * Expected: AuthService.login returns access and refresh tokens.
    */
+  const res = createResponse() as MockResponse<Response>;
+
   describe('login', () => {
     it('should return tokens on successful login', async () => {
       const mockUser = {
@@ -49,8 +51,6 @@ describe('AuthController', () => {
       const req = createRequest({
         user: mockUser,
       }) as MockRequest<AuthenticatedRequest>;
-
-      const res = createResponse() as MockResponse<Response>;
 
       const mockLoginResponse = {
         accessToken: 'abc',
@@ -89,7 +89,6 @@ describe('AuthController', () => {
         },
       }) as MockRequest<AuthenticatedRequest>;
 
-      const res = createResponse() as MockResponse<Response>;
       const params = { email: 'proxy@example.com' };
       const mockProxyResponse = {
         access_token: 'proxy',
@@ -122,7 +121,6 @@ describe('AuthController', () => {
         },
       }) as MockRequest<AuthenticatedRequest>;
 
-      const res = createResponse() as MockResponse<Response>;
       const params = { email: 'bad@example.com' };
 
       mockAuthService.proxyLogin.mockRejectedValue(new Error('Not found'));
@@ -142,8 +140,6 @@ describe('AuthController', () => {
      * Expected: Returns new access and refresh tokens.
      */
     it('should return new tokens on valid refresh', async () => {
-      const res = createResponse() as MockResponse<Response>;
-
       mockAuthService.refreshToken.mockResolvedValue({
         accessToken: 'new-access',
         refreshToken: 'new-refresh',
@@ -162,8 +158,6 @@ describe('AuthController', () => {
      * Expected: Responds with 401 and error message.
      */
     it('should return 401 if refresh token is missing', async () => {
-      const res = createResponse() as MockResponse<Response>;
-
       await controller.refresh('', res);
 
       expect(res._getStatusCode()).toBe(401);
@@ -173,8 +167,6 @@ describe('AuthController', () => {
      * Expected: Responds with 403 and error message.
      */
     it('should return 403 if refresh fails', async () => {
-      const res = createResponse() as MockResponse<Response>;
-
       mockAuthService.refreshToken.mockRejectedValue(
         new Error('Token expired'),
       );
@@ -206,8 +198,6 @@ describe('AuthController', () => {
         },
       }) as MockRequest<AuthenticatedRequest>;
 
-      const res = createResponse() as MockResponse<Response>;
-
       mockAuthService.logout.mockResolvedValue({ message: 'Logged out' });
 
       await controller.logout(req, res);
@@ -229,8 +219,6 @@ describe('AuthController', () => {
           tokenVersion: 0,
         },
       }) as MockRequest<AuthenticatedRequest>;
-
-      const res = createResponse() as MockResponse<Response>;
 
       mockAuthService.logout.mockRejectedValue(new Error('Logout error'));
 

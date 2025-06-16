@@ -5,6 +5,8 @@ import { NotFoundException } from '@nestjs/common';
 import { UsersController } from 'src/users/users.controller';
 import { UsersService } from 'src/users/users.service';
 import { CreateUserDto } from 'src/users/dto/user.dto';
+import { createResponse } from 'node-mocks-http';
+import { Response } from 'express';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -38,7 +40,7 @@ describe('UsersController', () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
-
+  const res = createResponse() as Response;
   // Register
   describe('register', () => {
     it('should register a new user', async () => {
@@ -98,16 +100,9 @@ describe('UsersController', () => {
 
   // Get user by ID
   describe('getUserById', () => {
-    const mockResponse = () => {
-      const res = {
-        status: jest.fn().mockReturnThis(),
-        json: jest.fn().mockReturnThis(),
-      };
-      return res as any;
-    };
-
     it('should return user by ID', async () => {
-      const res = mockResponse();
+      // const res = mockResponse();
+
       mockUsersService.findById.mockResolvedValue(mockUser);
 
       await controller.getUserById(1, res);
@@ -116,7 +111,6 @@ describe('UsersController', () => {
     });
 
     it('should return 404 if user not found', async () => {
-      const res = mockResponse();
       mockUsersService.findById.mockRejectedValue(
         new NotFoundException('User not found'),
       );
@@ -133,18 +127,13 @@ describe('UsersController', () => {
 
   // Update role
   describe('updateUserRole', () => {
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
-    };
-
     it('should update user role', async () => {
       mockUsersService.updateRole.mockResolvedValue({
         ...mockUser,
         role: Role.ADMIN,
       });
 
-      await controller.updateUserRole(res as any, 1, { role: Role.ADMIN });
+      await controller.updateUserRole(res, 1, { role: Role.ADMIN });
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({ ...mockUser, role: Role.ADMIN });
     });
@@ -155,7 +144,7 @@ describe('UsersController', () => {
         message: 'Invalid role',
       });
 
-      await controller.updateUserRole(res as any, 1, {
+      await controller.updateUserRole(res, 1, {
         role: 'INVALID' as Role,
       });
       expect(res.status).toHaveBeenCalledWith(400);
@@ -165,15 +154,10 @@ describe('UsersController', () => {
 
   // Delete user
   describe('deleteUser', () => {
-    const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
-    };
-
     it('should delete a user', async () => {
       mockUsersService.remove.mockResolvedValue({ affected: 1, raw: {} });
 
-      await controller.deleteUser(1, res as any);
+      await controller.deleteUser(1, res);
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({ affected: 1, raw: {} });
     });
@@ -184,7 +168,7 @@ describe('UsersController', () => {
         message: 'Failed to delete',
       });
 
-      await controller.deleteUser(99, res as any);
+      await controller.deleteUser(99, res);
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({ message: 'Failed to delete' });
     });
