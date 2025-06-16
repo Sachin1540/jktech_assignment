@@ -30,7 +30,12 @@ describe('AuthController', () => {
 
     controller = module.get<AuthController>(AuthController);
   });
-
+  /**
+   * Test for POST /auth/login
+   * Scenario: User login using valid credentials.
+   * Guards: LocalAuthGuard must succeed (mocked).
+   * Expected: AuthService.login returns access and refresh tokens.
+   */
   describe('login', () => {
     it('should return tokens on successful login', async () => {
       const mockUser = {
@@ -65,7 +70,14 @@ describe('AuthController', () => {
       expect(JSON.parse(res._getData())).toEqual(mockLoginResponse);
     });
   });
+
   describe('adminProxy', () => {
+    /**
+     * Test for GET /auth/admin-proxy/:email
+     * Scenario: Admin uses proxy login with a valid target email.
+     * Guards: JwtAuthGuard, RolesGuard (mocked).
+     * Expected: AuthService.proxyLogin returns a token.
+     */
     it('should proxy login as another user', async () => {
       const req = createRequest({
         user: {
@@ -94,7 +106,11 @@ describe('AuthController', () => {
       expect(res._getStatusCode()).toBe(200);
       expect(JSON.parse(res._getData())).toEqual(mockProxyResponse);
     });
-
+    /**
+     * Test for failed proxy login.
+     * Scenario: AuthService throws an error.
+     * Expected: Responds with 400 and error message.
+     */
     it('should return 400 if proxy login fails', async () => {
       const req = createRequest({
         user: {
@@ -119,6 +135,12 @@ describe('AuthController', () => {
   });
 
   describe('refresh', () => {
+    /**
+     * Test for POST /auth/refresh
+     * Scenario: Valid refresh token is provided.
+     * Guards: JwtAuthGuard, RolesGuard (mocked).
+     * Expected: Returns new access and refresh tokens.
+     */
     it('should return new tokens on valid refresh', async () => {
       const res = createResponse() as MockResponse<Response>;
 
@@ -135,7 +157,10 @@ describe('AuthController', () => {
         refreshToken: 'new-refresh',
       });
     });
-
+    /**
+     * Scenario: Missing refresh token.
+     * Expected: Responds with 401 and error message.
+     */
     it('should return 401 if refresh token is missing', async () => {
       const res = createResponse() as MockResponse<Response>;
 
@@ -143,7 +168,10 @@ describe('AuthController', () => {
 
       expect(res._getStatusCode()).toBe(401);
     });
-
+    /**
+     * Scenario: Invalid refresh token causes failure.
+     * Expected: Responds with 403 and error message.
+     */
     it('should return 403 if refresh fails', async () => {
       const res = createResponse() as MockResponse<Response>;
 
@@ -161,6 +189,12 @@ describe('AuthController', () => {
   });
 
   describe('logout', () => {
+    /**
+     * Test for POST /auth/logout
+     * Scenario: Authenticated user logs out.
+     * Guards: JwtAuthGuard (mocked).
+     * Expected: Calls AuthService.logout and responds with success.
+     */
     it('should logout user successfully', async () => {
       const req = createRequest({
         user: {
@@ -181,7 +215,10 @@ describe('AuthController', () => {
       expect(res._getStatusCode()).toBe(200);
       expect(JSON.parse(res._getData())).toEqual({ message: 'Logged out' });
     });
-
+    /**
+     * Scenario: Logout fails due to backend error.
+     * Expected: Responds with 400 and error message.
+     */
     it('should return 400 on logout failure', async () => {
       const req = createRequest({
         user: {
