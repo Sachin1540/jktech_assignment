@@ -31,6 +31,7 @@ import { Response, Request } from 'express';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { UpdateDocumentDto } from './dto/document.dto';
 import { Role } from 'src/auth/dto/enum/roles.enum';
+import { AuthenticatedRequest } from 'src/common/types/authenticated-request';
 
 @ApiTags('Document')
 @Controller('documents')
@@ -66,7 +67,7 @@ export class DocumentController {
   @ApiOperation({ summary: 'Upload a document' })
   async upload(
     @UploadedFile() file: Express.Multer.File,
-    @Req() req: Request,
+    @Req() req: AuthenticatedRequest,
     @Res() res: Response,
   ) {
     try {
@@ -152,7 +153,7 @@ export class DocumentController {
     @Param('id') id: number,
     @UploadedFile() file: Express.Multer.File,
     @Body() body: UpdateDocumentDto,
-    @Req() req: Request,
+    @Req() req: AuthenticatedRequest,
   ) {
     return this.documentService.updateDocument(id, body, file, req.user);
   }

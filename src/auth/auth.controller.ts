@@ -23,15 +23,8 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
 import { LoginDTO, RefreshTokenDto } from './dto/auth-dto';
-import { User } from 'src/users/user.entity';
 import { Role } from './dto/enum/roles.enum';
-
-/**
- * Interface extending the Request object to include authenticated user.
- */
-export interface AuthenticatedRequest extends Request {
-  user: User;
-}
+import { AuthenticatedRequest } from 'src/common/types/authenticated-request';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -49,7 +42,7 @@ export class AuthController {
   @ApiBody({ type: LoginDTO })
   @UseGuards(LocalAuthGuard)
   @ApiOperation({ summary: 'User login with email and password' })
-  async login(@Req() req: Request, @Res() res: Response) {
+  async login(@Req() req: AuthenticatedRequest, @Res() res: Response) {
     try {
       const result = await this.authService.login(req.user);
       res.status(HttpStatus.OK).json(result);
@@ -74,7 +67,11 @@ export class AuthController {
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Admin login as another user' })
   @ApiParam({ name: 'email', required: true, description: 'Target email' })
-  async adminProxy(@Req() req: Request, @Res() res: Response, @Param() params) {
+  async adminProxy(
+    @Req() req: AuthenticatedRequest,
+    @Res() res: Response,
+    @Param() params,
+  ) {
     try {
       const result = await this.authService.proxyLogin(
         params.email.toLowerCase(),

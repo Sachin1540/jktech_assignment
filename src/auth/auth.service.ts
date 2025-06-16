@@ -3,6 +3,13 @@ import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { User } from 'src/users/user.entity';
+import { Role } from './dto/enum/roles.enum';
+interface JwtPayload {
+  sub: number;
+  email: string;
+  role: string;
+  version: number;
+}
 
 @Injectable()
 export class AuthService {
@@ -34,7 +41,7 @@ export class AuthService {
    * @param user - User object (without password) from LocalStrategy.
    * @returns Object containing tokens and minimal user info.
    */
-  async login(user: any) {
+  async login(user: User) {
     const payload = {
       sub: user.id,
       email: user.email,
@@ -66,8 +73,8 @@ export class AuthService {
    * @throws Forbidden if non-admin tries proxy login.
    * @throws Not Found if target user doesn't exist.
    */
-  async proxyLogin(email: string, user: any) {
-    if (user?.role !== 'ADMIN') {
+  async proxyLogin(email: string, user: User) {
+    if (user?.role !== Role.ADMIN) {
       throw {
         success: false,
         message: 'You are not authorized to perform proxy login.',
@@ -109,9 +116,10 @@ export class AuthService {
    * @returns Object with new tokens.
    * @throws Error if the token is invalid or tampered.
    */
+
   async refreshToken(refreshToken: string) {
     try {
-      const decoded: any = this.jwtService.verify(refreshToken, {
+      const decoded: JwtPayload = this.jwtService.verify(refreshToken, {
         secret: process.env.REFRESH_TOKEN_SECRET,
       });
 

@@ -8,6 +8,8 @@ import axios from 'axios';
 import { Ingestion } from './entity/ingestion.entity';
 import { Repository } from 'typeorm';
 import { IngestionRun } from './entity/ingestionrun.entity';
+import { User } from 'src/users/user.entity';
+import { IngestionResponse, JKTechCarrers } from './types/ingestion.interface';
 
 /**
  * Service responsible for handling the ingestion logic.
@@ -41,7 +43,7 @@ export class IngestionService {
    * @returns An object with ingestion summary
    * @throws InternalServerErrorException if ingestion fails
    */
-  async triggerIngestion(user: any): Promise<any> {
+  async triggerIngestion(user: User): Promise<IngestionResponse> {
     this.logger.log(`Ingestion triggered by user: ${user.email}`);
 
     const body = {
@@ -73,7 +75,7 @@ export class IngestionService {
       // Process each item
       if (totalCount > 0) {
         await Promise.all(
-          result.reqDetailsBOList.map(async (data: any) => {
+          result.reqDetailsBOList.map(async (data: JKTechCarrers) => {
             const existing = await this.ingestionRepository.findOne({
               where: { reqId: data.reqId },
             });
@@ -84,7 +86,7 @@ export class IngestionService {
                 title: data.reqTitle,
                 employmentType: data.employmentType,
                 status: 'IN_PROGRESS',
-                createdBy: user.id,
+                createdBy: user,
                 ingestionRun: ingestionRun,
               });
 

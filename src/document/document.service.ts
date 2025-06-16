@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Document } from './entity/document.entity';
 import { UpdateDocumentDto } from './dto/document.dto';
+import { User } from 'src/users/user.entity';
 
 @Injectable()
 export class DocumentService {
@@ -18,13 +19,15 @@ export class DocumentService {
     private documentRepo: Repository<Document>,
   ) {}
 
-  async uploadDocument(file: Express.Multer.File, uploadedBy: any) {
+  async uploadDocument(file: Express.Multer.File, uploadedBy: User) {
     try {
       const doc = this.documentRepo.create({
         filename: file.originalname,
         path: file.path,
         mimetype: file.mimetype,
-        uploadedBy: uploadedBy?.id,
+        uploadedBy: { id: uploadedBy.id }, // Fix here
+
+        // uploadedBy: uploadedBy?.id,
       });
       return await this.documentRepo.save(doc);
     } catch (error) {
@@ -51,8 +54,8 @@ export class DocumentService {
   async updateDocument(
     id: number,
     dto: UpdateDocumentDto,
-    file?: Express.Multer.File,
-    user?: any,
+    file: Express.Multer.File,
+    user: User,
   ) {
     const document = await this.documentRepo.findOne({ where: { id } });
     if (!document) throw new NotFoundException('Document not found');
@@ -65,7 +68,7 @@ export class DocumentService {
       document.mimetype = file.mimetype;
     }
 
-    document.updatedBy = user.id;
+    document.updatedBy = user;
 
     return this.documentRepo.save(document);
   }

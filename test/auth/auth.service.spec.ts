@@ -3,6 +3,7 @@ import { AuthService } from '../../src/auth/auth.service';
 import { UsersService } from '../../src/users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { Role } from 'src/auth/dto/enum/roles.enum';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -13,7 +14,7 @@ describe('AuthService', () => {
     id: 1,
     email: 'user@example.com',
     password: 'hashedPass',
-    role: 'USER',
+    role: Role.USER,
     tokenVersion: 1,
   };
 
@@ -85,7 +86,13 @@ describe('AuthService', () => {
   describe('proxyLogin', () => {
     it('should throw if user is not admin', async () => {
       await expect(
-        service.proxyLogin('target@example.com', { role: 'USER' }),
+        service.proxyLogin('target@example.com', {
+          role: Role.USER,
+          id: 0,
+          email: '',
+          password: '',
+          tokenVersion: 0,
+        }),
       ).rejects.toMatchObject({
         status: 403,
         message: 'You are not authorized to perform proxy login.',
@@ -96,7 +103,13 @@ describe('AuthService', () => {
       mockUsersService.findByEmail.mockResolvedValue(null);
 
       await expect(
-        service.proxyLogin('target@example.com', { role: 'ADMIN' }),
+        service.proxyLogin('target@example.com', {
+          role: Role.ADMIN,
+          id: 0,
+          email: '',
+          password: '',
+          tokenVersion: 0,
+        }),
       ).rejects.toMatchObject({
         status: 404,
         message: 'Target user not found.',
@@ -108,7 +121,11 @@ describe('AuthService', () => {
       mockJwtService.signAsync.mockResolvedValue('proxy-token');
 
       const result = await service.proxyLogin('target@example.com', {
-        role: 'ADMIN',
+        role: Role.ADMIN,
+        id: 0,
+        email: '',
+        password: '',
+        tokenVersion: 0,
       });
 
       expect(result).toEqual({
