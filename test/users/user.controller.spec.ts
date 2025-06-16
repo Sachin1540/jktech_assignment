@@ -1,11 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { Role } from 'src/auth/dto/enum/roles.enum';
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { UsersController } from 'src/users/users.controller';
 import { UsersService } from 'src/users/users.service';
-import { CreateUserDto } from 'src/users/dto/user.dto';
+import { CreateUserDto, UpdateRoleDto } from 'src/users/dto/user.dto';
 import { createResponse } from 'node-mocks-http';
+import * as httpMocks from 'node-mocks-http';
+
 import { Response } from 'express';
 
 describe('UsersController', () => {
@@ -56,24 +58,51 @@ describe('UsersController', () => {
       expect(result).toEqual(mockUser);
       expect(mockUsersService.register).toHaveBeenCalledWith(dto);
     });
-
     it('should handle registration failure', async () => {
       mockUsersService.register.mockRejectedValue(
         new Error('Registration failed'),
       );
 
-      const result = await controller.register({
-        email: 'fail@example.com',
-        password: 'pass',
-        role: Role.USER,
-      });
+      await expect(
+        controller.register({
+          email: 'fail@example.com',
+          password: 'pass',
+          role: Role.USER,
+        }),
+      ).rejects.toThrow(BadRequestException);
 
-      if ('success' in result && result.success === false) {
-        expect(result.message).toBe('Registration failed');
-      } else {
-        fail('Expected error response with success: false');
-      }
+      await expect(
+        controller.register({
+          email: 'fail@example.com',
+          password: 'pass',
+          role: Role.USER,
+        }),
+      ).rejects.toMatchObject({
+        response: {
+          success: false,
+          message: 'Registration failed',
+          error: 'Registration failed',
+        },
+      });
     });
+
+    // it('should handle registration failure', async () => {
+    //   mockUsersService.register.mockRejectedValue(
+    //     new Error('Registration failed'),
+    //   );
+
+    //   const result = await controller.register({
+    //     email: 'fail@example.com',
+    //     password: 'pass',
+    //     role: Role.USER,
+    //   });
+
+    //   if ('success' in result && result.success === false) {
+    //     expect(result.message).toBe('Registration failed');
+    //   } else {
+    //     fail('Expected error response with success: false');
+    //   }
+    // });
   });
 
   // Get all users
@@ -100,24 +129,29 @@ describe('UsersController', () => {
 
   // Get user by ID
   describe('getUserById', () => {
-    it('should return user by ID', async () => {
-      // const res = mockResponse();
+    it('should return user by id', async () => {
+      const user = { id: 1, email: 'test@example.com' };
+      const res = httpMocks.createResponse();
+      mockUsersService.findById.mockResolvedValue(user);
 
-      mockUsersService.findById.mockResolvedValue(mockUser);
+      const controller = new UsersController(mockUsersService as any);
+      await controller.getUserById(1, res as Response);
 
-      await controller.getUserById(1, res);
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith(mockUser);
+      expect(res._getStatusCode()).toBe(200);
+      expect(res._getJSONData()).toEqual(user);
     });
 
-    it('should return 404 if user not found', async () => {
+    it('should handle user not found', async () => {
+      const res = httpMocks.createResponse();
       mockUsersService.findById.mockRejectedValue(
         new NotFoundException('User not found'),
       );
 
-      await controller.getUserById(99, res);
-      expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({
+      const controller = new UsersController(mockUsersService as any);
+      await controller.getUserById(999, res as Response);
+
+      expect(res._getStatusCode()).toBe(404);
+      expect(res._getJSONData()).toEqual({
         success: false,
         message: 'Failed to get user',
         error: 'User not found',
@@ -127,50 +161,62 @@ describe('UsersController', () => {
 
   // Update role
   describe('updateUserRole', () => {
-    it('should update user role', async () => {
-      mockUsersService.updateRole.mockResolvedValue({
-        ...mockUser,
-        role: Role.ADMIN,
-      });
+    it('should update role successfully', async () => {
+      const dto: UpdateRoleDto = { role: Role.ADMIN };
+      const res = httpMocks.createResponse();
+      const result = { success: true };
+      mockUsersService.updateRole.mockResolvedValue(result);
 
-      await controller.updateUserRole(res, 1, { role: Role.ADMIN });
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({ ...mockUser, role: Role.ADMIN });
+      const controller = new UsersController(mockUsersService as any);
+      await controller.updateUserRole(res as Response, 1, dto);
+
+      expect(res._getStatusCode()).toBe(200);
+      expect(res._getJSONData()).toEqual(result);
     });
 
-    it('should handle error on role update', async () => {
+    it('should handle role update error', async () => {
+      const res = httpMocks.createResponse();
       mockUsersService.updateRole.mockRejectedValue({
-        status: 400,
         message: 'Invalid role',
+        status: 400,
       });
 
-      await controller.updateUserRole(res, 1, {
-        role: 'INVALID' as Role,
-      });
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Invalid role' });
+      const controller = new UsersController(mockUsersService as any);
+      await controller.updateUserRole(res as Response, 1, {
+        role: 'INVALID',
+      } as any);
+
+      expect(res._getStatusCode()).toBe(400);
+      expect(res._getJSONData()).toEqual({ message: 'Invalid role' });
     });
   });
 
   // Delete user
   describe('deleteUser', () => {
     it('should delete a user', async () => {
-      mockUsersService.remove.mockResolvedValue({ affected: 1, raw: {} });
+      const res = httpMocks.createResponse();
+      const result = { success: true };
+      mockUsersService.remove.mockResolvedValue(result);
 
-      await controller.deleteUser(1, res);
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({ affected: 1, raw: {} });
+      const controller = new UsersController(mockUsersService as any);
+      await controller.deleteUser(1, res as Response);
+
+      expect(res._getStatusCode()).toBe(200);
+      expect(res._getJSONData()).toEqual(result);
     });
 
-    it('should return error if deletion fails', async () => {
+    it('should handle delete failure', async () => {
+      const res = httpMocks.createResponse();
       mockUsersService.remove.mockRejectedValue({
+        message: 'Delete error',
         status: 500,
-        message: 'Failed to delete',
       });
 
-      await controller.deleteUser(99, res);
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Failed to delete' });
+      const controller = new UsersController(mockUsersService as any);
+      await controller.deleteUser(1, res as Response);
+
+      expect(res._getStatusCode()).toBe(500);
+      expect(res._getJSONData()).toEqual({ message: 'Delete error' });
     });
   });
 });

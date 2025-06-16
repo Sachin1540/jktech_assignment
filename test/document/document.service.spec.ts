@@ -7,7 +7,7 @@ import {
   NotFoundException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { User } from 'src/users/user.entity';
+import { Users } from 'src/users/user.entity';
 
 const mockDocumentRepo = () => ({
   create: jest.fn(),
@@ -54,7 +54,7 @@ describe('DocumentService', () => {
     filename: 'test.pdf',
   } as Express.Multer.File;
 
-  const mockUser = { id: 1 } as User;
+  const mockUser = { id: 1 } as Users;
 
   describe('uploadDocument', () => {
     it('should create and save document successfully', async () => {
@@ -156,10 +156,14 @@ describe('DocumentService', () => {
 
   describe('delete', () => {
     it('should delete document and return success message', async () => {
+      const mockDocument = { id: 1, title: 'Test Doc' };
+
+      repo.findOneBy.mockResolvedValue(mockDocument);
       repo.delete.mockResolvedValue({});
 
       const result = await service.delete(1);
 
+      expect(repo.findOneBy).toHaveBeenCalledWith({ id: 1 });
       expect(repo.delete).toHaveBeenCalledWith(1);
       expect(result).toEqual({ success: true, message: 'Document deleted' });
     });

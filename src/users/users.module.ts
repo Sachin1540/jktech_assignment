@@ -2,11 +2,11 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
-import { User } from './user.entity';
+import { Users } from './user.entity';
 
 @Module({
   // Register the User entity for dependency injection via TypeORM
-  imports: [TypeOrmModule.forFeature([User])],
+  imports: [TypeOrmModule.forFeature([Users])],
 
   // Service to handle business logic
   providers: [UsersService],

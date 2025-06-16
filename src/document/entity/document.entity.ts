@@ -1,4 +1,4 @@
-import { User } from 'src/users/user.entity';
+import { Users } from 'src/users/user.entity';
 import {
   Entity,
   Column,
@@ -42,16 +42,16 @@ export class Document {
   /**
    * User who uploaded the document.
    */
-  @ManyToOne(() => User, { nullable: true })
+  @ManyToOne(() => Users, { nullable: true })
   @JoinColumn({ name: 'uploadedBy' })
-  uploadedBy: User;
+  uploadedBy: Users;
 
   /**
-   * User who last updated the document.
+   * Users who last updated the document.
    */
-  @ManyToOne(() => User, { nullable: true })
+  @ManyToOne(() => Users, { nullable: true })
   @JoinColumn({ name: 'updatedBy' })
-  updatedBy: User;
+  updatedBy: Users;
 
   /**
    * Timestamp when the document was created.

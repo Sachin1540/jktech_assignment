@@ -8,7 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Ingestion_Status } from './enum/ingestion.enum';
-import { User } from 'src/users/user.entity';
+import { Users } from 'src/users/user.entity';
 
 /**
  * Entity representing a single run of the ingestion process.
@@ -52,9 +52,9 @@ export class IngestionRun {
   /**
    * User who created the ingestion job.
    */
-  @ManyToOne(() => User, { nullable: false })
+  @ManyToOne(() => Users, { nullable: false })
   @JoinColumn({ name: 'createdBy' })
-  createdBy: User;
+  createdBy: Users;
 
   /**
    * Timestamp when the ingestion run was created.

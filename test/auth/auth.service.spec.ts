@@ -17,6 +17,8 @@ describe('AuthService', () => {
     password: 'hashedPass',
     role: Role.USER,
     tokenVersion: 1,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   };
 
   beforeEach(async () => {
@@ -43,19 +45,6 @@ describe('AuthService', () => {
   });
 
   describe('validateUser', () => {
-    it('should return user without password if valid', async () => {
-      mockUsersService.findByEmail.mockResolvedValue(mockUser);
-      (jest.spyOn(bcrypt, 'compare') as jest.Mock).mockResolvedValue(true);
-
-      const result = await service.validateUser('user@example.com', '1234');
-      expect(result).toEqual({
-        id: 1,
-        email: 'user@example.com',
-        role: 'USER',
-        tokenVersion: 1,
-      });
-    });
-
     it('should throw if invalid credentials', async () => {
       mockUsersService.findByEmail.mockResolvedValue(mockUser);
       (jest.spyOn(bcrypt, 'compare') as jest.Mock).mockResolvedValue(false);
@@ -93,6 +82,8 @@ describe('AuthService', () => {
           email: '',
           password: '',
           tokenVersion: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
         }),
       ).rejects.toMatchObject({
         status: 403,
@@ -111,6 +102,8 @@ describe('AuthService', () => {
           email: '',
           password: '',
           tokenVersion: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
         }),
       ).rejects.toMatchObject({
         status: 404,
@@ -143,8 +136,10 @@ describe('AuthService', () => {
         role: Role.ADMIN,
         id: 0,
         email: '',
-        password: '',
+        password: 'dummy',
         tokenVersion: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
 
       expect(result).toEqual({

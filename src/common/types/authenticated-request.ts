@@ -1,4 +1,4 @@
-import { User } from 'src/users/user.entity';
+import { Users } from 'src/users/user.entity';
 
 /**
  * Interface extending the base Express Request object to include authenticated user information.
@@ -13,5 +13,5 @@ export interface AuthenticatedRequest extends Request {
    * The currently authenticated user object.
    * Injected by the authentication guard after verifying the JWT token.
    */
-  user: User;
+  user: Users;
 }

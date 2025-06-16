@@ -8,7 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Document } from './entity/document.entity';
 import { UpdateDocumentDto } from './dto/document.dto';
-import { User } from 'src/users/user.entity';
+import { Users } from 'src/users/user.entity';
 /**
  * Service for managing document operations such as uploading,
  * retrieving, updating, and deleting documents.
@@ -28,7 +28,7 @@ export class DocumentService {
    * @returns The saved document entity.
    * @throws InternalServerErrorException if saving fails.
    */
-  async uploadDocument(file: Express.Multer.File, uploadedBy: User) {
+  async uploadDocument(file: Express.Multer.File, uploadedBy: Users) {
     try {
       const doc = this.documentRepo.create({
         filename: file.originalname,
@@ -85,7 +85,7 @@ export class DocumentService {
     id: number,
     dto: UpdateDocumentDto,
     file: Express.Multer.File,
-    user: User,
+    user: Users,
   ) {
     const document = await this.documentRepo.findOne({ where: { id } });
     if (!document) throw new NotFoundException('Document not found');

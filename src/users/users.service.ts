@@ -7,7 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { User } from './user.entity';
+import { Users } from './user.entity';
 import { CreateUserDto } from './dto/user.dto';
 import { Role } from 'src/auth/dto/enum/roles.enum';
 
@@ -18,8 +18,8 @@ import { Role } from 'src/auth/dto/enum/roles.enum';
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    @InjectRepository(Users)
+    private readonly userRepository: Repository<Users>,
   ) {}
 
   /**

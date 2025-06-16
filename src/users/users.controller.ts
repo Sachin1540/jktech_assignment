@@ -13,6 +13,7 @@ import {
   UseGuards,
   ParseIntPipe,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto, UpdateRoleDto } from './dto/user.dto';
@@ -62,11 +63,16 @@ export class UsersController {
       };
       return await this.usersService.register(payload);
     } catch (error) {
-      return {
+      throw new BadRequestException({
         success: false,
         message: 'Registration failed',
         error: error?.message || error,
-      };
+      });
+      // return {
+      //   success: false,
+      //   message: 'Registration failed',
+      //   error: error?.message || error,
+      // };
     }
   }
 

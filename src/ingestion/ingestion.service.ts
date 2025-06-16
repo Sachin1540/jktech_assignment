@@ -8,7 +8,7 @@ import axios from 'axios';
 import { Ingestion } from './entity/ingestion.entity';
 import { Repository } from 'typeorm';
 import { IngestionRun } from './entity/ingestionrun.entity';
-import { User } from 'src/users/user.entity';
+import { Users } from 'src/users/user.entity';
 import { IngestionResponse, JKTechCarrers } from './types/ingestion.interface';
 import { Ingestion_Status } from './entity/enum/ingestion.enum';
 
@@ -44,7 +44,7 @@ export class IngestionService {
    * @returns An object with ingestion summary
    * @throws InternalServerErrorException if ingestion fails
    */
-  async triggerIngestion(user: User): Promise<IngestionResponse> {
+  async triggerIngestion(user: Users): Promise<IngestionResponse> {
     this.logger.log(`Ingestion triggered by user: ${user.email}`);
 
     const body = {

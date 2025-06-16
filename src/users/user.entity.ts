@@ -11,7 +11,7 @@ import {
  * User entity representing a user record in the database.
  */
 @Entity()
-export class User {
+export class Users {
   /**
    * Primary key - auto-generated user ID.
    */

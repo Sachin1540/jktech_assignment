@@ -2,7 +2,7 @@ import { HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { User } from 'src/users/user.entity';
+import { Users } from 'src/users/user.entity';
 import { Role } from './dto/enum/roles.enum';
 interface JwtPayload {
   sub: number;
@@ -41,7 +41,7 @@ export class AuthService {
    * @param user - User object (without password) from LocalStrategy.
    * @returns Object containing tokens and minimal user info.
    */
-  async login(user: User) {
+  async login(user: Users) {
     const payload = {
       sub: user.id,
       email: user.email,
@@ -73,7 +73,7 @@ export class AuthService {
    * @throws Forbidden if non-admin tries proxy login.
    * @throws Not Found if target user doesn't exist.
    */
-  async proxyLogin(email: string, user: User) {
+  async proxyLogin(email: string, user: Users) {
     if (user?.role !== Role.ADMIN) {
       throw {
         success: false,
@@ -156,7 +156,7 @@ export class AuthService {
    * @param user - Authenticated user object.
    * @returns Message indicating successful logout.
    */
-  async logout(user: User) {
+  async logout(user: Users) {
     await this.usersService.incrementTokenVersion(user.id); // force invalidate tokens
     return { message: 'Logged out from all devices.' };
   }
