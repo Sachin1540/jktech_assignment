@@ -4,8 +4,11 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { Ingestion_Status } from './enum/ingestion.enum';
+import { User } from 'src/users/user.entity';
 
 /**
  * Entity representing a single run of the ingestion process.
@@ -47,10 +50,11 @@ export class IngestionRun {
   failCount: number;
 
   /**
-   * ID of the user who initiated the ingestion run.
+   * User who created the ingestion job.
    */
-  @Column()
-  createdBy: number;
+  @ManyToOne(() => User, { nullable: false })
+  @JoinColumn({ name: 'createdBy' })
+  createdBy: User;
 
   /**
    * Timestamp when the ingestion run was created.

@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 import { IngestionRun } from './entity/ingestionrun.entity';
 import { User } from 'src/users/user.entity';
 import { IngestionResponse, JKTechCarrers } from './types/ingestion.interface';
+import { Ingestion_Status } from './entity/enum/ingestion.enum';
 
 /**
  * Service responsible for handling the ingestion logic.
@@ -54,8 +55,8 @@ export class IngestionService {
 
     // Step 1: Create IngestionRun record
     const ingestionRun = this.ingestionRunRepository.create({
-      status: 'IN_PROGRESS',
-      createdBy: user.id,
+      status: Ingestion_Status.IN_PROGRESS,
+      createdBy: user,
       totalCount: 0,
     });
     await this.ingestionRunRepository.save(ingestionRun);
@@ -85,17 +86,17 @@ export class IngestionService {
                 reqId: data.reqId,
                 title: data.reqTitle,
                 employmentType: data.employmentType,
-                status: 'IN_PROGRESS',
+                status: Ingestion_Status.IN_PROGRESS,
                 createdBy: user,
                 ingestionRun: ingestionRun,
               });
 
               try {
                 await this.ingestionRepository.save(newRecord);
-                newRecord.status = 'COMPLETED';
+                newRecord.status = Ingestion_Status.COMPLETED;
                 successCount++;
               } catch (err) {
-                newRecord.status = 'FAILED';
+                newRecord.status = Ingestion_Status.FAILED;
                 newRecord.errorMessage = err.message;
                 failCount++;
               }
@@ -108,7 +109,8 @@ export class IngestionService {
       }
 
       // Step 3: Update the ingestion run record
-      ingestionRun.status = failCount > 0 ? 'FAILED' : 'COMPLETED';
+      ingestionRun.status =
+        failCount > 0 ? Ingestion_Status.FAILED : Ingestion_Status.COMPLETED;
       ingestionRun.totalCount = totalCount;
       ingestionRun.successCount = successCount;
       ingestionRun.failCount = failCount;
@@ -132,7 +134,7 @@ export class IngestionService {
       // Handle ingestion errors
       this.logger.error('Ingestion failed:', error);
 
-      ingestionRun.status = 'FAILED';
+      ingestionRun.status = Ingestion_Status.FAILED;
       ingestionRun.completedAt = new Date();
       await this.ingestionRunRepository.save(ingestionRun);
 
