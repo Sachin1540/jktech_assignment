@@ -16,7 +16,7 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
-import { Request, Response } from 'express';
+import {  Response } from 'express';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './local-auth.guard';
 import { JwtAuthGuard } from './jwt-auth.guard';

@@ -1,5 +1,11 @@
 import { Role } from 'src/auth/dto/enum/roles.enum';
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 /**
  * User entity representing a user record in the database.
@@ -42,4 +48,16 @@ export class User {
    */
   @Column({ default: 0 })
   tokenVersion: number;
+
+  /**
+   * Timestamp when the user was created.
+   */
+  @CreateDateColumn()
+  createdAt: Date;
+
+  /**
+   * Timestamp when the user was last updated.
+   */
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

@@ -1,4 +1,3 @@
-import { Role } from 'src/auth/dto/enum/roles.enum';
 import { User } from 'src/users/user.entity';
 
 /**

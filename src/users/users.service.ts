@@ -7,11 +7,14 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-
 import { User } from './user.entity';
 import { CreateUserDto } from './dto/user.dto';
 import { Role } from 'src/auth/dto/enum/roles.enum';
 
+/**
+ * Service for managing user operations such as registering,
+ * retrieving, updating, and deleting users.
+ */
 @Injectable()
 export class UsersService {
   constructor(
@@ -19,7 +22,13 @@ export class UsersService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  // Register a new user
+  /**
+   * Registers a new user with a hashed password.
+   * @param createUserDto Data required to create a new user.
+   * @returns The created user without the password field.
+   * @throws ConflictException if the email is already registered.
+   * @throws InternalServerErrorException if saving the user fails.
+   */
   async register(createUserDto: CreateUserDto) {
     const { email, password, role } = createUserDto;
 
@@ -48,7 +57,12 @@ export class UsersService {
     }
   }
 
-  // Find a user by email
+  /**
+   * Finds a user by email.
+   * @param email The email address to search for.
+   * @returns The matching user.
+   * @throws NotFoundException if no user is found.
+   */
   async findByEmail(email: string) {
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
@@ -57,7 +71,12 @@ export class UsersService {
     return user;
   }
 
-  // Invalidate all previous JWTs by incrementing tokenVersion
+  /**
+   * Increments a user's token version to invalidate existing JWTs.
+   * @param userId The ID of the user.
+   * @returns True if the token version was successfully incremented.
+   * @throws InternalServerErrorException if the operation fails.
+   */
   async incrementTokenVersion(userId: number): Promise<boolean> {
     try {
       const result = await this.userRepository.increment(
@@ -73,27 +92,45 @@ export class UsersService {
     }
   }
 
-  // Get all users (exclude password)
+  /**
+   * Retrieves all users, excluding password fields.
+   * @returns An array of user objects with id, email, and role.
+   */
   async findAll() {
     return this.userRepository.find({ select: ['id', 'email', 'role'] });
   }
 
-  // Find user by ID
+  /**
+   * Finds a user by ID.
+   * @param id The ID of the user.
+   * @returns The matching user.
+   * @throws NotFoundException if the user is not found.
+   */
   async findById(id: number) {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) throw new NotFoundException('User not found');
     return user;
   }
 
-  // Update user's role
+  /**
+   * Updates a user's role.
+   * @param id The ID of the user.
+   * @param role The new role to assign.
+   * @returns The updated user object.
+   * @throws NotFoundException if the user does not exist.
+   */
   async updateRole(id: number, role: Role) {
     const user = await this.findById(id);
-    console.log('user: ', user);
     user.role = role;
     return this.userRepository.save(user);
   }
 
-  // Delete user
+  /**
+   * Deletes a user by ID after checking existence.
+   * @param id The ID of the user to delete.
+   * @returns The result of the delete operation.
+   * @throws NotFoundException if the user does not exist.
+   */
   async remove(id: number) {
     await this.findById(id);
     return this.userRepository.delete(id);
